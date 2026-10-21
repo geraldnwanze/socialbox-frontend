@@ -14,6 +14,27 @@ export type ChannelConnectionStatus = "CONNECTED" | "DISCONNECTED" | "ERROR" | "
 
 export type ConversationStatus = "OPEN" | "PENDING" | "RESOLVED";
 
+export type ConversationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+
+export type ConversationEventType =
+  | "CREATED"
+  | "ASSIGNED"
+  | "UNASSIGNED"
+  | "STATUS_CHANGED"
+  | "PRIORITY_CHANGED"
+  | "TAG_ADDED"
+  | "TAG_REMOVED"
+  | "NOTE";
+
+export interface ConversationEvent {
+  id: string;
+  type: ConversationEventType;
+  data: Record<string, unknown>;
+  createdAt: string;
+  /** Null when the system did it (e.g. a customer message reopened the conversation). */
+  actor: { id: string; name: string } | null;
+}
+
 export type MessageDirection = "INBOUND" | "OUTBOUND";
 
 export type MessageType =
@@ -136,6 +157,7 @@ export interface Conversation {
   contactId: string;
   externalConversationId: string;
   status: ConversationStatus;
+  priority: ConversationPriority;
   assignedTo?: string | null;
   lastMessageAt?: string;
   lastMessagePreview?: string;

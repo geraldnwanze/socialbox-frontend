@@ -8,6 +8,7 @@ import { useConversations } from "@/hooks/use-conversations";
 import { useInboxFilters } from "./inbox-filters-context";
 import { ViewerBadges } from "@/components/inbox/presence-bar";
 import { ChannelDot } from "@/components/channel-badge";
+import { PRIORITY_BADGE_CLASS, PRIORITY_LABEL } from "@/lib/priority";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,6 +109,16 @@ export function ConversationList() {
                   <p className={cn("truncate text-sm", conversation.unreadCount > 0 ? "font-semibold" : "font-medium")}>
                     {name}
                   </p>
+                  {PRIORITY_BADGE_CLASS[conversation.priority] && (
+                    <span
+                      className={cn(
+                        "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase",
+                        PRIORITY_BADGE_CLASS[conversation.priority],
+                      )}
+                    >
+                      {PRIORITY_LABEL[conversation.priority]}
+                    </span>
+                  )}
                   <ViewerBadges conversationId={conversation.id} />
                   {conversation.lastMessageAt && (
                     <span className="shrink-0 text-xs text-muted-foreground">

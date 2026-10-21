@@ -48,6 +48,9 @@ export function useRealtime() {
     socket.on("conversation.presence", (payload: { conversationId: string; viewers: Viewer[] }) =>
       applyPresence(payload.conversationId, payload.viewers),
     );
+    socket.on("conversation.activity", (payload: { conversationId: string }) =>
+      queryClient.invalidateQueries({ queryKey: ["conversation-events", payload.conversationId] }),
+    );
     socket.on("conversation.created", invalidateConversations);
     socket.on("conversation.updated", invalidateConversation);
     socket.on("conversation.assigned", invalidateConversation);

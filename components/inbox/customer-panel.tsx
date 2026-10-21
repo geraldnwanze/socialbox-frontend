@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Conversation } from "@/lib/types";
+import type { Conversation, ConversationPriority } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChannelLabel } from "@/components/channel-badge";
+import { ActivityTimeline } from "@/components/inbox/activity-timeline";
+import { PRIORITIES, PRIORITY_LABEL } from "@/lib/priority";
 import { identityLabel } from "@/lib/channel-meta";
 import { useTeamMembers } from "@/hooks/use-team";
 import { useTags } from "@/hooks/use-tags";
@@ -31,6 +33,7 @@ import {
   useMarkConversationPending,
   useReopenConversation,
   useResolveConversation,
+  useSetConversationPriority,
 } from "@/hooks/use-conversations";
 import { CircleCheck, Clock, Loader2, RotateCcw, Tag as TagIcon } from "lucide-react";
 
@@ -47,6 +50,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
   const resolve = useResolveConversation();
   const reopen = useReopenConversation();
   const markPending = useMarkConversationPending();
+  const setPriority = useSetConversationPriority();
   const addTag = useAddConversationTag();
   const removeTag = useRemoveConversationTag();
   const [isMutating, setIsMutating] = useState(false);
@@ -117,6 +121,29 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
             )}
           </>
         )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <p className="text-xs font-medium uppercase text-muted-foreground">Priority</p>
+        <Select
+          value={conversation.priority ?? "NORMAL"}
+          onValueChange={(value) =>
+            setPriority.mutate({ id: conversation.id, priority: value as ConversationPriority })
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue>{(value: string | null) => PRIORITY_LABEL[(value ?? "NORMAL") as ConversationPriority]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {PRIORITIES.map((p) => (
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Separator />
@@ -214,6 +241,10 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
           )}
         </div>
       </div>
+
+      <Separator />
+
+      <ActivityTimeline conversationId={conversation.id} />
     </aside>
   );
 }

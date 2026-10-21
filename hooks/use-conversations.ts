@@ -2,7 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import type { Conversation, ConversationStatus, Paginated } from "@/lib/types";
+import type {
+  Conversation,
+  ConversationEvent,
+  ConversationPriority,
+  ConversationStatus,
+  Paginated,
+} from "@/lib/types";
 
 export interface ConversationFilters {
   status?: ConversationStatus;
@@ -111,5 +117,33 @@ export function useRemoveConversationTag() {
       api.post(`/conversations/${conversationId}/tags/${tagId}/remove`),
     onSuccess: (_, { conversationId }) =>
       queryClient.invalidateQueries({ queryKey: ["conversation-tags", conversationId] }),
+  });
+}
+
+export function useConversationEvents(conversationId: string) {
+  return useQuery({
+    queryKey: ["conversation-events", conversationId],
+    queryFn: () => api.get<ConversationEvent[]>(`/conversations/${conversationId}/events`),
+  });
+}
+
+export function useSetConversationPriority() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, priority }: { id: string; priority: ConversationPriority }) =>
+      api.patch<Conversation>(`/conversations/${id}`, { priority }),
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.setQueryData(["conversation", conversation.id], conversation);
+      queryClient.invalidateQueries({ queryKey: ["conversation-events", conversation.id] });
+    },
+  });
+}
+
+export function useAddConversationNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) => api.post(`/conversations/${id}/notes`, { text }),
+    onSuccess: (_, { id }) => queryClient.invalidateQueries({ queryKey: ["conversation-events", id] }),
   });
 }
