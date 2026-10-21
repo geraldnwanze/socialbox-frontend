@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/settings/channels", label: "Channels" },
   { href: "/settings/replies", label: "Saved replies" },
+  { href: "/settings/automations", label: "Automations" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/workspace", label: "Workspace" },
 ];

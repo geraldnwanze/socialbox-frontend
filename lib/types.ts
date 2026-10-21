@@ -261,3 +261,28 @@ export interface AnalyticsOverview {
     medianFirstResponseSeconds: number | null;
   }[];
 }
+
+export type AutomationCondition =
+  | { type: "CHANNEL"; channels: ChannelType[] }
+  | { type: "KEYWORDS"; keywords: string[] }
+  | { type: "FIRST_MESSAGE" }
+  | { type: "UNASSIGNED" }
+  | { type: "OUTSIDE_HOURS"; hours: { enabled: boolean; timezone: string; days: number[]; start: string; end: string } };
+
+export type AutomationAction =
+  | { type: "ASSIGN"; memberIds: string[] }
+  | { type: "ADD_TAG"; tagId: string }
+  | { type: "SET_PRIORITY"; priority: ConversationPriority }
+  | { type: "AUTO_REPLY"; text: string; cooldownMinutes: number }
+  | { type: "RESOLVE" };
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  position: number;
+  conditions: AutomationCondition[];
+  actions: AutomationAction[];
+  triggerCount: number;
+  lastTriggeredAt?: string | null;
+}

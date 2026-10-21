@@ -17,7 +17,7 @@ const STATUS_VERB: Record<string, string> = {
 };
 
 function describe(event: ConversationEvent): string {
-  const who = event.actor?.name ?? "The customer";
+  const who = event.data.via === "automation" ? `Automation "${String(event.data.rule)}"` : (event.actor?.name ?? "The customer");
   const d = event.data;
   switch (event.type) {
     case "CREATED":

@@ -52,6 +52,7 @@ export function MessageBubble({ message }: { message: Message }) {
   const retry = useRetryMessage();
   const [formatted, setFormatted] = useState(false);
   const html = typeof message.metadata?.html === "string" ? message.metadata.html : null;
+  const automated = message.senderType === "SYSTEM" && isOutbound;
 
   return (
     <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
@@ -71,6 +72,7 @@ export function MessageBubble({ message }: { message: Message }) {
               ))}
             </div>
           )}
+          {automated && <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide opacity-70">Automated reply</p>}
           {typeof message.metadata?.subject === "string" && message.metadata.subject && (
             <p className="mb-1 font-semibold">{message.metadata.subject}</p>
           )}
