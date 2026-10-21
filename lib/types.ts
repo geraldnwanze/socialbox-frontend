@@ -286,3 +286,35 @@ export interface AutomationRule {
   triggerCount: number;
   lastTriggeredAt?: string | null;
 }
+
+export interface InboxViewFilters {
+  status?: ConversationStatus;
+  channelConnectionId?: string;
+  /** "me", "unassigned", or a member id. */
+  assignedTo?: string;
+  unreadOnly?: boolean;
+  search?: string;
+  priority?: ConversationPriority;
+  tagId?: string;
+  sort?: "newest" | "oldest";
+}
+
+export interface InboxView {
+  id: string;
+  name: string;
+  shared: boolean;
+  filters: InboxViewFilters;
+  ownerName: string | null;
+  canEdit: boolean;
+}
+
+export type BulkAction =
+  | { type: "RESOLVE" | "REOPEN" | "PENDING" | "MARK_READ" }
+  | { type: "ASSIGN"; memberId: string | null }
+  | { type: "PRIORITY"; priority: ConversationPriority }
+  | { type: "ADD_TAG" | "REMOVE_TAG"; tagId: string };
+
+export interface BulkResult {
+  updated: number;
+  failed: { id: string; reason: string }[];
+}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import type {
+  BulkAction,
+  BulkResult,
   Conversation,
   ConversationEvent,
   ConversationPriority,
@@ -16,6 +18,9 @@ export interface ConversationFilters {
   assignedTo?: "me" | "unassigned" | string;
   unreadOnly?: boolean;
   search?: string;
+  priority?: ConversationPriority;
+  tagId?: string;
+  sort?: "newest" | "oldest";
 }
 
 function toQueryString(filters: ConversationFilters) {
@@ -25,10 +30,28 @@ function toQueryString(filters: ConversationFilters) {
   if (filters.assignedTo) params.set("assignedTo", filters.assignedTo);
   if (filters.unreadOnly) params.set("unreadOnly", "true");
   if (filters.search) params.set("search", filters.search);
+  if (filters.priority) params.set("priority", filters.priority);
+  if (filters.tagId) params.set("tagId", filters.tagId);
+  if (filters.sort) params.set("sort", filters.sort);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
 
+/** The inbox list: pages through every match ("Load more"), not just the first 20. */
+export function useConversationList(filters: ConversationFilters) {
+  return useInfiniteQuery({
+    queryKey: ["conversations", "list", filters],
+    queryFn: ({ pageParam }: { pageParam: string | null }) => {
+      const qs = toQueryString(filters);
+      const cursor = pageParam ? `${qs ? "&" : "?"}cursor=${encodeURIComponent(pageParam)}` : "";
+      return api.get<Paginated<Conversation>>(`/conversations${qs}${cursor}`);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  });
+}
+
+/** First page only — enough for the sidebar's small counts. */
 export function useConversations(filters: ConversationFilters) {
   return useQuery({
     queryKey: ["conversations", filters],
@@ -145,5 +168,19 @@ export function useAddConversationNote() {
   return useMutation({
     mutationFn: ({ id, text }: { id: string; text: string }) => api.post(`/conversations/${id}/notes`, { text }),
     onSuccess: (_, { id }) => queryClient.invalidateQueries({ queryKey: ["conversation-events", id] }),
+  });
+}
+
+export function useBulkConversationAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, action }: { ids: string[]; action: BulkAction }) =>
+      api.post<BulkResult>("/conversations/bulk", { ids, action }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation-events"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation-tags"] });
+    },
   });
 }
