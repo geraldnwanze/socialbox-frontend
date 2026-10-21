@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChannelLabel } from "@/components/channel-badge";
 import { ActivityTimeline } from "@/components/inbox/activity-timeline";
+import { AiSummaryCard } from "@/components/inbox/ai-summary-card";
 import { PRIORITIES, PRIORITY_LABEL } from "@/lib/priority";
 import { identityLabel } from "@/lib/channel-meta";
 import { useTeamMembers } from "@/hooks/use-team";
@@ -122,6 +123,8 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
           </>
         )}
       </div>
+
+      <AiSummaryCard key={conversation.id} conversationId={conversation.id} />
 
       <Separator />
 

@@ -16,7 +16,7 @@ export function useCreateWorkspace() {
 export function useUpdateWorkspaceSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: { sendReadReceipts?: boolean }) => api.patch<Workspace>("/workspace/settings", settings),
+    mutationFn: (settings: { sendReadReceipts?: boolean; aiAssistEnabled?: boolean }) => api.patch<Workspace>("/workspace/settings", settings),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
   });
 }

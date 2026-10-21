@@ -69,6 +69,8 @@ export interface Workspace {
   logoUrl?: string | null;
   /** Tell customers when an agent has read their message. */
   sendReadReceipts: boolean;
+  /** Lets agents use AI assist, which sends the open conversation to Anthropic. */
+  aiAssistEnabled: boolean;
   role: WorkspaceRole;
 }
 
@@ -348,3 +350,21 @@ export interface BulkResult {
   updated: number;
   failed: { id: string; reason: string }[];
 }
+
+export interface AiStatus {
+  /** The server has an API key. */
+  configured: boolean;
+  /** An admin switched AI assist on for this workspace. */
+  enabled: boolean;
+}
+
+export interface AiSummary {
+  summary: string;
+  sentiment: "POSITIVE" | "NEUTRAL" | "NEGATIVE";
+  intent: string;
+  needsReply: boolean;
+  nextStep: string;
+  cached: boolean;
+}
+
+export type RewriteTone = "friendlier" | "more_formal" | "shorter" | "fix_grammar";

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, Sparkles, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TAG_COLORS = ["#6366F1", "#F59E0B", "#10B981", "#3B82F6", "#EF4444", "#8B5CF6", "#EC4899"];
 
@@ -21,6 +22,7 @@ export default function WorkspaceSettingsPage() {
   const createTag = useCreateTag();
   const deleteTag = useDeleteTag();
   const updateSettings = useUpdateWorkspaceSettings();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [color, setColor] = useState(TAG_COLORS[0]);
   const isAdmin = activeWorkspace?.role === "OWNER" || activeWorkspace?.role === "ADMIN";
@@ -65,6 +67,39 @@ export default function WorkspaceSettingsPage() {
                 { sendReadReceipts: checked },
                 {
                   onSuccess: () => toast.success(checked ? "Read receipts on" : "Read receipts off"),
+                  onError: () => toast.error("Unable to update this setting"),
+                },
+              )
+            }
+          />
+        </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-1.5 text-base">
+              <Sparkles className="h-4 w-4" /> AI assist
+            </CardTitle>
+            <CardDescription>
+              Lets agents summarise a conversation, draft a reply for them to review, and polish their own wording.
+              Nothing is ever sent automatically. <strong>When used, the messages of the conversation being worked on
+              are sent to Anthropic</strong> (card numbers and credential-like strings are removed first), and Anthropic
+              processes them under its commercial terms. Leave this off if your privacy policy does not allow that.
+            </CardDescription>
+          </div>
+          <Switch
+            aria-label="Enable AI assist"
+            checked={activeWorkspace?.aiAssistEnabled ?? false}
+            disabled={!isAdmin || updateSettings.isPending}
+            onCheckedChange={(checked) =>
+              updateSettings.mutate(
+                { aiAssistEnabled: checked },
+                {
+                  onSuccess: () => {
+                    toast.success(checked ? "AI assist on" : "AI assist off");
+                    queryClient.invalidateQueries({ queryKey: ["ai-status"] });
+                  },
                   onError: () => toast.error("Unable to update this setting"),
                 },
               )

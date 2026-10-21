@@ -10,8 +10,20 @@ import { useCannedResponses } from "@/hooks/use-canned-responses";
 import { useAuth } from "@/providers/auth-provider";
 import { expandCannedResponse } from "@/lib/canned-response-template";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/lib/api-client";
+import { useAiAvailable, useRewrite, useSuggestReply } from "@/hooks/use-ai";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { RewriteTone } from "@/lib/types";
 import type { CannedResponse, ChannelCapabilities, ConversationStatus, MessageType } from "@/lib/types";
-import { Loader2, MessageSquareText, Paperclip, Send, X } from "lucide-react";
+import { Loader2, MessageSquareText, Paperclip, Send, Sparkles, X } from "lucide-react";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -42,6 +54,12 @@ export function MessageComposer({
   const [activeIndex, setActiveIndex] = useState(0);
   const [pickerDismissed, setPickerDismissed] = useState(false);
   const [browsing, setBrowsing] = useState(false);
+  const aiAvailable = useAiAvailable();
+  const suggestReply = useSuggestReply();
+  const rewrite = useRewrite();
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [undoText, setUndoText] = useState<string | null>(null);
+  const aiBusy = suggestReply.isPending || rewrite.isPending;
   const sendMessage = useSendMessage();
   const requestUploadUrl = useRequestUploadUrl();
 
@@ -80,6 +98,39 @@ export function MessageComposer({
     api.post(`/conversations/${conversationId}/presence`, { typing: true }).catch(() => undefined);
   }
 
+  const aiError = (err: unknown) => toast.error(err instanceof ApiError ? err.message : "AI assist couldn't do that — try again");
+
+  function askForSuggestion() {
+    // Anything the agent already typed acts as guidance ("offer a refund"), not as the draft itself.
+    const steer = text.trim().slice(0, 300);
+    suggestReply.mutate(
+      { conversationId, instruction: steer || undefined },
+      { onSuccess: (res) => setSuggestion(res.text), onError: aiError },
+    );
+  }
+
+  function applySuggestion() {
+    if (suggestion === null) return;
+    setUndoText(text);
+    setText(suggestion);
+    setSuggestion(null);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
+  function rewriteDraft(tone: RewriteTone) {
+    if (!text.trim()) return;
+    rewrite.mutate(
+      { text, tone },
+      {
+        onSuccess: (res) => {
+          setUndoText(text);
+          setText(res.text);
+        },
+        onError: aiError,
+      },
+    );
+  }
+
   async function handleSend() {
     if (isResolved) return;
     if (!text.trim() && !pendingFile) return;
@@ -102,6 +153,8 @@ export function MessageComposer({
         await sendMessage.mutateAsync({ conversationId, type: "TEXT", text: text.trim() });
       }
       setText("");
+      setUndoText(null);
+      setSuggestion(null);
     } catch {
       toast.error("Unable to send message — please try again");
     }
@@ -146,6 +199,18 @@ export function MessageComposer({
 
   return (
     <div className="space-y-2 border-t p-3">
+      {undoText !== null && (
+        <button
+          type="button"
+          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          onClick={() => {
+            setText(undoText);
+            setUndoText(null);
+          }}
+        >
+          Undo AI change
+        </button>
+      )}
       {pendingFile && (
         <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs">
           <Paperclip className="h-3.5 w-3.5" />
@@ -153,6 +218,26 @@ export function MessageComposer({
           <button onClick={() => setPendingFile(null)} className="text-muted-foreground hover:text-foreground">
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
+      )}
+      {suggestion !== null && (
+        <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50 p-3 text-sm dark:border-violet-900 dark:bg-violet-950/30">
+          <p className="flex items-center gap-1 text-xs font-medium text-violet-900 dark:text-violet-200">
+            <Sparkles className="h-3 w-3" /> Suggested reply — check it before you send
+          </p>
+          <p className="whitespace-pre-wrap">{suggestion}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={applySuggestion}>
+              Use this reply
+            </Button>
+            <Button type="button" size="sm" variant="outline" disabled={aiBusy} onClick={askForSuggestion}>
+              {suggestReply.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Try again
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setSuggestion(null)}>
+              Dismiss
+            </Button>
+          </div>
         </div>
       )}
       {showPicker && (
@@ -180,7 +265,58 @@ export function MessageComposer({
           ))}
         </div>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex flex-col gap-2">
+        <Textarea
+          value={text}
+          ref={textareaRef}
+          onChange={(e) => {
+            setText(e.target.value);
+            pingTyping(e.target.value);
+            setPickerDismissed(false);
+            setBrowsing(false);
+            setActiveIndex(0);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message..."
+          className="min-h-20 w-full resize-none"
+          rows={3}
+          disabled={isSending}
+        />
+        <div className="flex items-center gap-1">
+        {aiAvailable && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button type="button" variant="ghost" size="icon" title="AI assist" aria-label="AI assist" disabled={isSending || aiBusy}>
+                  {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={askForSuggestion}>
+                  <Sparkles className="h-4 w-4" /> Suggest a reply
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Rewrite my draft</DropdownMenuLabel>
+                {(
+                  [
+                    ["friendlier", "Friendlier"],
+                    ["more_formal", "More formal"],
+                    ["shorter", "Shorter"],
+                    ["fix_grammar", "Fix spelling & grammar"],
+                  ] as [RewriteTone, string][]
+                ).map(([tone, label]) => (
+                  <DropdownMenuItem key={tone} disabled={!text.trim()} onClick={() => rewriteDraft(tone)}>
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -224,25 +360,11 @@ export function MessageComposer({
             </Button>
           </>
         )}
-        <Textarea
-          value={text}
-          ref={textareaRef}
-          onChange={(e) => {
-            setText(e.target.value);
-            pingTyping(e.target.value);
-            setPickerDismissed(false);
-            setBrowsing(false);
-            setActiveIndex(0);
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="min-h-10 flex-1 resize-none"
-          rows={1}
-          disabled={isSending}
-        />
+          <div className="flex-1" />
         <Button onClick={handleSend} disabled={isSending || (!text.trim() && !pendingFile)}>
           {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
+        </div>
       </div>
     </div>
   );
