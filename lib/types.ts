@@ -260,6 +260,36 @@ export interface AnalyticsOverview {
     firstReplies: number;
     medianFirstResponseSeconds: number | null;
   }[];
+  byTag: {
+    tagId: string;
+    name: string;
+    color: string;
+    conversations: number;
+    answered: number;
+    unanswered: number;
+    medianFirstResponseSeconds: number | null;
+  }[];
+  /** Conversations in the period that carry no tag at all. */
+  untagged: number;
+  workload: {
+    members: WorkloadRow[];
+    unassigned: WorkloadRow;
+    backlog: { awaitingReply: number; oldestWaitingSince: string | null };
+  };
+}
+
+export interface WorkloadRow {
+  memberId: string | null;
+  name: string;
+  open: number;
+  pending: number;
+  unread: number;
+  awaitingReply: number;
+  oldestWaitingSince: string | null;
+  highPriority: number;
+  resolved: number;
+  messagesSent: number;
+  medianFirstResponseSeconds: number | null;
 }
 
 export type AutomationCondition =

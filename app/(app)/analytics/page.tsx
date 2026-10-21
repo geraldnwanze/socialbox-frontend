@@ -7,6 +7,8 @@ import { formatDuration } from "@/lib/format-duration";
 import { ChannelLabel } from "@/components/channel-badge";
 import { PageSpinner } from "@/components/page-spinner";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNowStrict } from "date-fns";
+import type { WorkloadRow } from "@/lib/types";
 
 const RANGES = [7, 30, 90] as const;
 
@@ -110,6 +112,94 @@ export default function AnalyticsPage() {
                 <span>{data.daily[0]?.date}</span>
                 <span>{data.daily[data.daily.length - 1]?.date}</span>
               </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-medium">Team workload</h2>
+                <p className="text-xs text-muted-foreground">
+                  {data.workload.backlog.awaitingReply === 0
+                    ? "Nothing is waiting on a reply right now."
+                    : `${data.workload.backlog.awaitingReply} waiting on a reply${
+                        data.workload.backlog.oldestWaitingSince
+                          ? `, the longest for ${formatDistanceToNowStrict(new Date(data.workload.backlog.oldestWaitingSince))}`
+                          : ""
+                      }`}
+                </p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Teammate</th>
+                      <th className="px-2 py-2 text-right font-medium" title="Open conversations they own">Open</th>
+                      <th className="px-2 py-2 text-right font-medium">Pending</th>
+                      <th className="px-2 py-2 text-right font-medium" title="Open and the customer wrote last">Awaiting reply</th>
+                      <th className="px-2 py-2 text-right font-medium" title="Longest wait for a reply">Oldest wait</th>
+                      <th className="px-2 py-2 text-right font-medium" title="High or urgent priority, not resolved">High+</th>
+                      <th className="px-2 py-2 text-right font-medium" title="In the selected period">Resolved</th>
+                      <th className="px-2 py-2 text-right font-medium" title="In the selected period">Replies</th>
+                      <th className="px-3 py-2 text-right font-medium" title="Median, in the selected period">First response</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[data.workload.unassigned, ...data.workload.members].map((row: WorkloadRow) => (
+                      <tr key={row.memberId ?? "unassigned"} className={row.memberId === null ? "bg-muted/20" : undefined}>
+                        <td className="px-3 py-2 font-medium">{row.name}</td>
+                        <td className="px-2 py-2 text-right tabular-nums">{row.open}</td>
+                        <td className="px-2 py-2 text-right tabular-nums">{row.pending}</td>
+                        <td className={cn("px-2 py-2 text-right tabular-nums", row.awaitingReply > 0 && "font-semibold text-amber-700 dark:text-amber-400")}>
+                          {row.awaitingReply}
+                        </td>
+                        <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
+                          {row.oldestWaitingSince ? formatDistanceToNowStrict(new Date(row.oldestWaitingSince)) : "—"}
+                        </td>
+                        <td className="px-2 py-2 text-right tabular-nums">{row.highPriority}</td>
+                        <td className="px-2 py-2 text-right tabular-nums">{row.resolved}</td>
+                        <td className="px-2 py-2 text-right tabular-nums">{row.messagesSent}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                          {row.memberId === null ? "" : formatDuration(row.medianFirstResponseSeconds)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Open, pending and awaiting reply are right now; resolved, replies and first response cover the period
+                above. &quot;Resolved&quot; counts conversations that person resolved themselves.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="font-medium">By tag</h2>
+              {data.byTag.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No tagged conversations in this period{data.untagged > 0 ? ` (${data.untagged} without a tag)` : ""}.
+                </p>
+              ) : (
+                <div className="divide-y rounded-lg border">
+                  {data.byTag.map((t) => (
+                    <div key={t.tagId} className="flex items-center gap-3 p-3 text-sm">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
+                      <span className="min-w-0 flex-1 truncate font-medium">{t.name}</span>
+                      <span className="w-32 text-right tabular-nums">
+                        {t.conversations} {t.conversations === 1 ? "conversation" : "conversations"}
+                      </span>
+                      <span className="w-24 text-right tabular-nums text-muted-foreground">
+                        {t.unanswered > 0 ? `${t.unanswered} unanswered` : "all answered"}
+                      </span>
+                      <span className="w-20 text-right tabular-nums text-muted-foreground">
+                        {formatDuration(t.medianFirstResponseSeconds)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="p-3 text-xs text-muted-foreground">
+                    {data.untagged} conversation{data.untagged === 1 ? "" : "s"} without a tag. A conversation with
+                    several tags counts under each.
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className="space-y-2">
