@@ -185,3 +185,14 @@ export interface Paginated<T> {
   items: T[];
   nextCursor: string | null;
 }
+
+export interface CannedResponse {
+  id: string;
+  workspaceId: string;
+  title: string;
+  /** Typed after "/" in the composer, e.g. "shipping". */
+  shortcut: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -33,7 +33,12 @@ export default function ConversationPage() {
     <div className="flex flex-1 overflow-hidden">
       <div className="flex flex-1 flex-col overflow-hidden">
         <MessageThread key={conversation.id} conversationId={conversation.id} />
-        <MessageComposer conversationId={conversation.id} status={conversation.status} capabilities={capabilities} />
+        <MessageComposer
+          conversationId={conversation.id}
+          status={conversation.status}
+          capabilities={capabilities}
+          customerName={conversation.contact?.displayName}
+        />
       </div>
       <CustomerPanel conversation={conversation} />
     </div>
