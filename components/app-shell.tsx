@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
@@ -17,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Inbox, MessagesSquare, Settings, Users } from "lucide-react";
+import { Bell, Inbox, MessagesSquare, Settings, Users, Volume2, VolumeX } from "lucide-react";
+import { isSoundEnabled, playMessageSound, setSoundEnabled } from "@/lib/notification-sound";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -33,6 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const markAllRead = useMarkAllNotificationsRead();
   const pathname = usePathname();
   const router = useRouter();
+  const [soundOn, setSoundOn] = useState(isSoundEnabled);
 
   const unreadNotifications = notifications?.filter((n) => !n.readAt).length ?? 0;
   const initials = (user?.fullName ?? "?")
@@ -101,6 +104,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            title={soundOn ? "Mute message sounds" : "Unmute message sounds"}
+            aria-label={soundOn ? "Mute message sounds" : "Unmute message sounds"}
+            onClick={() => {
+              const next = !soundOn;
+              setSoundEnabled(next);
+              setSoundOn(next);
+              if (next) void playMessageSound();
+            }}
+          >
+            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
           <DropdownMenu onOpenChange={(open) => open && unreadNotifications > 0 && markAllRead.mutate()}>
             <DropdownMenuTrigger
               render={

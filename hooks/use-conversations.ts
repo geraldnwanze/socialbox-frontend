@@ -61,6 +61,17 @@ export function useResolveConversation() {
   });
 }
 
+export function useMarkConversationPending() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<Conversation>(`/conversations/${id}/pending`),
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.setQueryData(["conversation", conversation.id], conversation);
+    },
+  });
+}
+
 export function useReopenConversation() {
   const queryClient = useQueryClient();
   return useMutation({

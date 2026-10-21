@@ -27,10 +27,11 @@ import {
   useAddConversationTag,
   useAssignConversation,
   useRemoveConversationTag,
+  useMarkConversationPending,
   useReopenConversation,
   useResolveConversation,
 } from "@/hooks/use-conversations";
-import { CircleCheck, Loader2, RotateCcw, Tag as TagIcon } from "lucide-react";
+import { CircleCheck, Clock, Loader2, RotateCcw, Tag as TagIcon } from "lucide-react";
 
 function initialsOf(name?: string) {
   if (!name) return "?";
@@ -44,6 +45,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
   const assign = useAssignConversation();
   const resolve = useResolveConversation();
   const reopen = useReopenConversation();
+  const markPending = useMarkConversationPending();
   const addTag = useAddConversationTag();
   const removeTag = useRemoveConversationTag();
   const [isMutating, setIsMutating] = useState(false);
@@ -51,11 +53,10 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
   const contact = conversation.contact;
   const appliedTagIds = new Set((conversationTags ?? []).map((t) => t.tagId));
 
-  async function handleResolveToggle() {
+  async function runStatusChange(change: () => Promise<unknown>) {
     setIsMutating(true);
     try {
-      if (conversation.status === "RESOLVED") await reopen.mutateAsync(conversation.id);
-      else await resolve.mutateAsync(conversation.id);
+      await change();
     } finally {
       setIsMutating(false);
     }
@@ -75,20 +76,47 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
         </div>
       </div>
 
-      <Button
-        variant={conversation.status === "RESOLVED" ? "outline" : "default"}
-        onClick={handleResolveToggle}
-        disabled={isMutating}
-      >
-        {isMutating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : conversation.status === "RESOLVED" ? (
-          <RotateCcw className="h-4 w-4" />
+      <div className="flex flex-col gap-2">
+        {conversation.status === "RESOLVED" ? (
+          <Button
+            variant="outline"
+            disabled={isMutating}
+            onClick={() => runStatusChange(() => reopen.mutateAsync(conversation.id))}
+          >
+            {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            Reopen conversation
+          </Button>
         ) : (
-          <CircleCheck className="h-4 w-4" />
+          <>
+            <Button
+              disabled={isMutating}
+              onClick={() => runStatusChange(() => resolve.mutateAsync(conversation.id))}
+            >
+              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleCheck className="h-4 w-4" />}
+              Resolve conversation
+            </Button>
+            {conversation.status === "PENDING" ? (
+              <Button
+                variant="outline"
+                disabled={isMutating}
+                onClick={() => runStatusChange(() => reopen.mutateAsync(conversation.id))}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Move back to open
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                disabled={isMutating}
+                onClick={() => runStatusChange(() => markPending.mutateAsync(conversation.id))}
+              >
+                <Clock className="h-4 w-4" />
+                Mark as pending
+              </Button>
+            )}
+          </>
         )}
-        {conversation.status === "RESOLVED" ? "Reopen conversation" : "Resolve conversation"}
-      </Button>
+      </div>
 
       <Separator />
 
@@ -101,7 +129,11 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
           }
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Unassigned" />
+            <SelectValue placeholder="Unassigned">
+              {(value: string | null) =>
+                members?.find((m) => m.id === value)?.user.fullName ?? "Unassigned"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="unassigned">Unassigned</SelectItem>
@@ -164,16 +196,96 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
       <div className="space-y-2">
         <p className="text-xs font-medium uppercase text-muted-foreground">Channels</p>
         <div className="space-y-2">
-          {contact?.identities?.map((identity) => (
-            <div key={identity.id} className="flex items-center justify-between text-sm">
-              <ChannelLabel type={identity.channel} />
-              <span className="truncate text-muted-foreground">
-                {identity.username ? `@${identity.username}` : identity.externalUserId}
-              </span>
-            </div>
-          ))}
+          {contact?.identities?.map((identity) =>
+            identity.channel === "LIVE_CHAT" ? (
+              <div key={identity.id} className="space-y-2">
+                <ChannelLabel type={identity.channel} />
+                <VisitorDetails metadata={identity.metadata} />
+              </div>
+            ) : (
+              <div key={identity.id} className="flex items-center justify-between text-sm">
+                <ChannelLabel type={identity.channel} />
+                <span className="truncate text-muted-foreground">
+                  {identity.username ? `@${identity.username}` : identity.externalUserId}
+                </span>
+              </div>
+            ),
+          )}
         </div>
       </div>
     </aside>
+  );
+}
+
+function countryDisplay(code: string): string {
+  const flag = String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+  let name = code.toUpperCase();
+  try {
+    name = new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? name;
+  } catch {
+    // Unknown region code: fall back to showing the code itself.
+  }
+  return `${flag} ${name}`;
+}
+
+/** Where the live-chat visitor is coming from. Page URL is supplied by the visitor's browser, so it
+ *  is shown as text and only linked when it's a plain http(s) address. */
+function VisitorDetails({ metadata }: { metadata?: Record<string, unknown> }) {
+  const ip = typeof metadata?.ip === "string" ? metadata.ip : null;
+  const countryCode = typeof metadata?.countryCode === "string" ? metadata.countryCode : null;
+  const pageUrl = typeof metadata?.pageUrl === "string" ? metadata.pageUrl : null;
+
+  if (!ip && !countryCode && !pageUrl) {
+    return <p className="text-xs text-muted-foreground">No visitor details captured yet.</p>;
+  }
+
+  let pageLabel = pageUrl;
+  let pageHref: string | null = null;
+  if (pageUrl) {
+    try {
+      const url = new URL(pageUrl);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        pageHref = url.toString();
+        pageLabel = `${url.host}${url.pathname === "/" ? "" : url.pathname}`;
+      }
+    } catch {
+      pageHref = null;
+    }
+  }
+
+  return (
+    <dl className="space-y-1.5 text-sm">
+      <VisitorRow label="Country" value={countryCode ? countryDisplay(countryCode) : "Unknown"} />
+      <VisitorRow label="IP address" value={ip ?? "Unknown"} mono />
+      <div className="flex items-start justify-between gap-3">
+        <dt className="shrink-0 text-muted-foreground">Page</dt>
+        <dd className="min-w-0 truncate text-right" title={pageUrl ?? undefined}>
+          {pageHref ? (
+            <a href={pageHref} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              {pageLabel}
+            </a>
+          ) : (
+            (pageLabel ?? "Unknown")
+          )}
+        </dd>
+      </div>
+      {countryCode && (
+        <p className="pt-1 text-[11px] text-muted-foreground">
+          IP geolocation by{" "}
+          <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+            DB-IP
+          </a>
+        </p>
+      )}
+    </dl>
+  );
+}
+
+function VisitorRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className={mono ? "font-mono text-xs" : undefined}>{value}</dd>
+    </div>
   );
 }

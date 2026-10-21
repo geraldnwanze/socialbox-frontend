@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChannelDot } from "@/components/channel-badge";
 import { CHANNEL_LABEL } from "@/lib/channel-meta";
-import { Loader2, Plug, Unplug } from "lucide-react";
+import { API_URL } from "@/lib/api-client";
+import { Copy, Loader2, Plug, Settings2, Unplug } from "lucide-react";
 
 export default function ChannelsSettingsPage() {
   const { data, isLoading } = useChannels();
@@ -22,7 +23,16 @@ export default function ChannelsSettingsPage() {
     );
   }
 
-  const connectedByType = new Map((data?.connected ?? []).map((c) => [c.type, c]));
+  // Settings of a disconnected connection, so reconnecting doesn't silently reset them
+  // (e.g. the live chat's allowed websites) to defaults.
+  const lastDisconnectedByType = new Map(
+    (data?.connected ?? []).filter((c) => c.status === "DISCONNECTED").map((c) => [c.type, c]),
+  );
+  const connectedByType = new Map(
+    (data?.connected ?? [])
+      .filter((c) => c.status !== "DISCONNECTED")
+      .map((c) => [c.type, c]),
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-6">
@@ -52,7 +62,22 @@ export default function ChannelsSettingsPage() {
                   </Badge>
                 )}
               </CardHeader>
-              <CardContent className="flex justify-end gap-2">
+              <CardContent className="space-y-3">
+                {entry.type === "LIVE_CHAT" && connection && connection.externalAccountId && (
+                  <EmbedSnippet widgetKey={connection.externalAccountId} />
+                )}
+                <div className="flex justify-end gap-2">
+                {entry.type === "LIVE_CHAT" && connection && (
+                  <ConnectChannelDialog
+                    type={entry.type}
+                    connection={connection}
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <Settings2 className="h-4 w-4" /> Settings
+                      </Button>
+                    }
+                  />
+                )}
                 {connection ? (
                   <Button
                     variant="outline"
@@ -69,6 +94,7 @@ export default function ChannelsSettingsPage() {
                 ) : entry.available ? (
                   <ConnectChannelDialog
                     type={entry.type}
+                    prefillFrom={lastDisconnectedByType.get(entry.type)}
                     trigger={
                       <Button size="sm">
                         <Plug className="h-4 w-4" /> Connect
@@ -80,10 +106,34 @@ export default function ChannelsSettingsPage() {
                     Coming soon
                   </Button>
                 )}
+                </div>
               </CardContent>
             </Card>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function EmbedSnippet({ widgetKey }: { widgetKey: string }) {
+  const snippet = `<script src="${API_URL}/widget.js" data-key="${widgetKey}" async></script>`;
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs text-muted-foreground">
+        Paste this just before the closing <code>&lt;/body&gt;</code> tag of your website:
+      </p>
+      <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-2">
+        <code className="flex-1 break-all text-xs">{snippet}</code>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Copy embed snippet"
+          onClick={() => navigator.clipboard.writeText(snippet).then(() => toast.success("Snippet copied"))}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );

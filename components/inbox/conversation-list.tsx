@@ -26,12 +26,12 @@ function initialsOf(name?: string) {
 
 export function ConversationList() {
   const { filters, search, setSearch } = useInboxFilters();
-  const [status, setStatus] = useState<ConversationStatus | "ALL">("ALL");
+  const [status, setStatus] = useState<ConversationStatus>("OPEN");
   const params = useParams<{ conversationId?: string }>();
 
   const { data, isLoading } = useConversations({
     ...filters,
-    status: status === "ALL" ? undefined : status,
+    status,
   });
 
   const conversations = data?.items ?? [];
@@ -48,9 +48,9 @@ export function ConversationList() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Tabs value={status} onValueChange={(v) => setStatus(v as ConversationStatus | "ALL")}>
+        <Tabs value={status} onValueChange={(v) => setStatus(v as ConversationStatus)}>
           <TabsList className="w-full">
-            <TabsTrigger value="ALL" className="flex-1">
+            <TabsTrigger value="OPEN" className="flex-1">
               Open
             </TabsTrigger>
             <TabsTrigger value="PENDING" className="flex-1">

@@ -9,5 +9,6 @@ export function createSocket(workspaceId: string): Socket {
     // fails outright behind proxies/sandboxes that don't support the raw upgrade.
     transports: ["polling", "websocket"],
     autoConnect: true,
+    extraHeaders: { "ngrok-skip-browser-warning": "1" },
   });
 }

@@ -32,3 +32,12 @@ export function useDisconnectChannel() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["channels"] }),
   });
 }
+
+export function useReconnectChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, credentials }: { id: string; credentials: Record<string, unknown> }) =>
+      api.post<ChannelConnection>(`/channels/${id}/reconnect`, { credentials }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["channels"] }),
+  });
+}

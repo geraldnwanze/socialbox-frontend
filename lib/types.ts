@@ -6,7 +6,8 @@ export type ChannelType =
   | "FACEBOOK_MESSENGER"
   | "INSTAGRAM"
   | "X"
-  | "TIKTOK";
+  | "TIKTOK"
+  | "LIVE_CHAT";
 
 export type ChannelConnectionStatus = "CONNECTED" | "DISCONNECTED" | "ERROR" | "PENDING";
 
@@ -83,6 +84,7 @@ export interface ChannelConnection {
   externalAccountId?: string;
   externalAccountName?: string;
   lastErrorMessage?: string;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,6 +96,8 @@ export interface ContactIdentity {
   externalUserId: string;
   username?: string;
   displayName?: string;
+  /** Channel-specific facts, e.g. IP / country / page for live chat visitors. */
+  metadata?: Record<string, unknown>;
 }
 
 export interface Contact {

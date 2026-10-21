@@ -7,6 +7,7 @@ export const CHANNEL_LABEL: Record<ChannelType, string> = {
   INSTAGRAM: "Instagram",
   X: "X",
   TIKTOK: "TikTok",
+  LIVE_CHAT: "Live chat",
 };
 
 export const CHANNEL_COLOR: Record<ChannelType, string> = {
@@ -16,6 +17,7 @@ export const CHANNEL_COLOR: Record<ChannelType, string> = {
   INSTAGRAM: "#E1306C",
   X: "#000000",
   TIKTOK: "#000000",
+  LIVE_CHAT: "#4F46E5",
 };
 
 export function channelInitial(type: ChannelType): string {

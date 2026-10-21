@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createSocket } from "@/lib/socket";
+import { playMessageSound, unlockAudioOnFirstInteraction } from "@/lib/notification-sound";
 import { useWorkspace } from "@/providers/workspace-provider";
 import type { Conversation, Message, Notification } from "@/lib/types";
 
@@ -20,6 +21,7 @@ export function useRealtime() {
     if (!activeWorkspace) return;
 
     const socket = createSocket(activeWorkspace.id);
+    const stopUnlocking = unlockAudioOnFirstInteraction();
 
     const invalidateConversations = () =>
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -32,12 +34,27 @@ export function useRealtime() {
       queryClient.invalidateQueries({ queryKey: ["conversation", conversation.id] });
     };
 
+    // Events sent while the socket was down (tunnel hiccup, API restart) are gone for good,
+    // so every (re)connect refetches what's on screen instead of trusting we missed nothing.
+    socket.on("connect", () => {
+      invalidateConversations();
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    });
+
     socket.on("conversation.created", invalidateConversations);
     socket.on("conversation.updated", invalidateConversation);
     socket.on("conversation.assigned", invalidateConversation);
     socket.on("conversation.resolved", invalidateConversation);
 
     socket.on("message.created", (message: Message) => {
+      if (message.direction === "INBOUND") {
+        void playMessageSound().then((result) => {
+          if (result === "blocked") {
+            toast.info("Click anywhere on the page to turn on message sounds", { id: "sound-blocked" });
+          }
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["messages", message.conversationId] });
       invalidateConversations();
     });
@@ -56,6 +73,7 @@ export function useRealtime() {
     });
 
     return () => {
+      stopUnlocking();
       socket.disconnect();
     };
   }, [activeWorkspace, queryClient]);

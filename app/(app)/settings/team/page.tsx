@@ -34,6 +34,12 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Trash2, UserPlus } from "lucide-react";
 
+const ROLE_LABEL: Record<WorkspaceRole, string> = {
+  OWNER: "Owner",
+  ADMIN: "Admin",
+  AGENT: "Agent",
+};
+
 function initialsOf(name?: string) {
   if (!name) return "?";
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -85,7 +91,7 @@ export default function TeamSettingsPage() {
                   onValueChange={(role) => updateRole.mutate({ id: member.id, role: role as WorkspaceRole })}
                 >
                   <SelectTrigger className="w-32">
-                    <SelectValue />
+                    <SelectValue>{(value: WorkspaceRole) => ROLE_LABEL[value] ?? value}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="OWNER">Owner</SelectItem>
@@ -94,7 +100,7 @@ export default function TeamSettingsPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <span className="text-sm text-muted-foreground">{member.role}</span>
+                <span className="text-sm text-muted-foreground">{ROLE_LABEL[member.role]}</span>
               )}
 
               {isAdmin && (
@@ -165,7 +171,7 @@ function InviteMemberDialog() {
               <Label htmlFor="invite-role">Role</Label>
               <Select value={role} onValueChange={(v) => setRole(v as WorkspaceRole)}>
                 <SelectTrigger id="invite-role" className="w-full">
-                  <SelectValue />
+                  <SelectValue>{(value: WorkspaceRole) => ROLE_LABEL[value] ?? value}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>

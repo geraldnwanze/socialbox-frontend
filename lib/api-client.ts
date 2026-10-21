@@ -55,6 +55,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   const requestHeaders: Record<string, string> = {
     "content-type": "application/json",
+    // Skips ngrok's free-tier interstitial page, which otherwise replaces API responses with HTML.
+    "ngrok-skip-browser-warning": "1",
     ...(headers as Record<string, string> | undefined),
   };
 
