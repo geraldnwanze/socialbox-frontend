@@ -20,6 +20,8 @@ import type { ChannelConnection, ChannelType } from "@/lib/types";
 import { CHANNEL_LABEL } from "@/lib/channel-meta";
 import { Loader2 } from "lucide-react";
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 interface FieldConfig {
   name: string;
   label: string;
@@ -27,6 +29,10 @@ interface FieldConfig {
   helpText?: string;
   optional?: boolean;
   secret?: boolean;
+  /** Non-text inputs. Values are always stored as strings: "true"/"false", "09:00", "1,2,3". */
+  kind?: "checkbox" | "time" | "days";
+  /** Only shown while another field has this value (e.g. hours fields while hours are enabled). */
+  showWhen?: { field: string; equals: string };
   defaultValue?: string;
   /** Renders a dropdown instead of a text box. */
   options?: { value: string; label: string }[];
@@ -103,6 +109,61 @@ const FIELDS_BY_TYPE: Partial<Record<ChannelType, FieldConfig[]>> = {
     { name: "greeting", label: "Greeting", placeholder: "Hi! How can we help?", optional: true },
     { name: "color", label: "Brand color", placeholder: "#4F46E5", helpText: "Hex value, e.g. #4F46E5.", optional: true },
     {
+      name: "askName",
+      label: "Ask for the visitor's name before they chat",
+      kind: "checkbox",
+      optional: true,
+    },
+    {
+      name: "askEmail",
+      label: "Ask for the visitor's email before they chat",
+      kind: "checkbox",
+      optional: true,
+    },
+    {
+      name: "hoursEnabled",
+      label: "Show as offline outside opening hours",
+      kind: "checkbox",
+      optional: true,
+      helpText: "Visitors can still leave messages; they just see your offline note.",
+    },
+    {
+      name: "timezone",
+      label: "Time zone",
+      placeholder: "Europe/London",
+      helpText: "Opening hours are read in this zone (an IANA name, e.g. America/New_York).",
+      defaultValue: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      showWhen: { field: "hoursEnabled", equals: "true" },
+    },
+    {
+      name: "hoursDays",
+      label: "Open on",
+      kind: "days",
+      defaultValue: "1,2,3,4,5",
+      showWhen: { field: "hoursEnabled", equals: "true" },
+    },
+    {
+      name: "hoursStart",
+      label: "Opens at",
+      kind: "time",
+      defaultValue: "09:00",
+      showWhen: { field: "hoursEnabled", equals: "true" },
+    },
+    {
+      name: "hoursEnd",
+      label: "Closes at",
+      kind: "time",
+      defaultValue: "17:00",
+      showWhen: { field: "hoursEnabled", equals: "true" },
+    },
+    {
+      name: "offlineMessage",
+      label: "Offline message",
+      placeholder: "We're offline right now. Leave a message and we'll get back to you.",
+      optional: true,
+      showWhen: { field: "hoursEnabled", equals: "true" },
+    },
+    {
       name: "allowedOrigins",
       label: "Allowed websites",
       placeholder: "https://example.com, https://shop.example.com",
@@ -133,11 +194,21 @@ function initialValues(type: ChannelType, connection?: ChannelConnection): Recor
     };
   }
   const origins = Array.isArray(meta.allowedOrigins) ? (meta.allowedOrigins as string[]).join(", ") : "";
+  const hours = (meta.hours ?? {}) as { enabled?: boolean; timezone?: string; days?: number[]; start?: string; end?: string };
   return {
+    ...defaults,
     title: String(meta.title ?? ""),
     greeting: String(meta.greeting ?? ""),
     color: String(meta.color ?? ""),
     allowedOrigins: origins,
+    askName: String(meta.askName === true),
+    askEmail: String(meta.askEmail === true),
+    offlineMessage: String(meta.offlineMessage ?? ""),
+    hoursEnabled: String(hours.enabled === true),
+    ...(hours.timezone && { timezone: hours.timezone }),
+    ...(hours.days && { hoursDays: hours.days.join(",") }),
+    ...(hours.start && { hoursStart: hours.start }),
+    ...(hours.end && { hoursEnd: hours.end }),
   };
 }
 
@@ -196,8 +267,51 @@ export function ConnectChannelDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {fields.map((field) => (
-              <div key={field.name} className="space-y-2">
+            {fields
+              .filter((field) => !field.showWhen || values[field.showWhen.field] === field.showWhen.equals)
+              .map((field) =>
+                field.kind === "checkbox" ? (
+                  <label key={field.name} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4"
+                      checked={values[field.name] === "true"}
+                      onChange={(e) => setValues((v) => ({ ...v, [field.name]: String(e.target.checked) }))}
+                    />
+                    <span>
+                      {field.label}
+                      {field.helpText && <span className="block text-xs text-muted-foreground">{field.helpText}</span>}
+                    </span>
+                  </label>
+                ) : field.kind === "days" ? (
+                  <div key={field.name} className="space-y-2">
+                    <Label>{field.label}</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DAY_LABELS.map((label, day) => {
+                        const selected = (values[field.name] ?? "").split(",").filter(Boolean).includes(String(day));
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() =>
+                              setValues((v) => {
+                                const set = new Set((v[field.name] ?? "").split(",").filter(Boolean));
+                                if (set.has(String(day))) set.delete(String(day));
+                                else set.add(String(day));
+                                return { ...v, [field.name]: [...set].sort().join(",") };
+                              })
+                            }
+                            className={`rounded-md border px-2.5 py-1 text-xs ${selected ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div key={field.name} className="space-y-2">
                 <Label htmlFor={field.name}>{field.label}</Label>
                 {field.options ? (
                   <select
@@ -215,7 +329,7 @@ export function ConnectChannelDialog({
                 ) : (
                   <Input
                     id={field.name}
-                    type={field.secret ? "password" : "text"}
+                    type={field.secret ? "password" : field.kind === "time" ? "time" : "text"}
                     autoComplete={field.secret ? "new-password" : "off"}
                     required={!field.optional}
                     placeholder={field.placeholder}
@@ -224,8 +338,9 @@ export function ConnectChannelDialog({
                   />
                 )}
                 {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
-              </div>
-            ))}
+                  </div>
+                ),
+              )}
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>

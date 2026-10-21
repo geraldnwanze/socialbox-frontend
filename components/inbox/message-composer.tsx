@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSendMessage, useRequestUploadUrl } from "@/hooks/use-messages";
+import { api } from "@/lib/api-client";
 import { useCannedResponses } from "@/hooks/use-canned-responses";
 import { useAuth } from "@/providers/auth-provider";
 import { expandCannedResponse } from "@/lib/canned-response-template";
@@ -68,6 +69,15 @@ export function MessageComposer({
     setPickerDismissed(false);
     setActiveIndex(0);
     requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
+  // Lets the customer's side show "typing…" (live chat). At most one request per 3 seconds.
+  const lastTypingPing = useRef(0);
+  function pingTyping(value: string) {
+    const now = Date.now();
+    if (!value.trim() || value.startsWith("/") || now - lastTypingPing.current < 3000) return;
+    lastTypingPing.current = now;
+    api.post(`/conversations/${conversationId}/typing`).catch(() => undefined);
   }
 
   async function handleSend() {
@@ -219,6 +229,7 @@ export function MessageComposer({
           ref={textareaRef}
           onChange={(e) => {
             setText(e.target.value);
+            pingTyping(e.target.value);
             setPickerDismissed(false);
             setBrowsing(false);
             setActiveIndex(0);

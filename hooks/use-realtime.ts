@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createSocket } from "@/lib/socket";
+import { emitTyping } from "@/lib/typing-events";
 import { playMessageSound, unlockAudioOnFirstInteraction } from "@/lib/notification-sound";
 import { useWorkspace } from "@/providers/workspace-provider";
 import type { Conversation, Message, Notification } from "@/lib/types";
@@ -42,6 +43,7 @@ export function useRealtime() {
       queryClient.invalidateQueries({ queryKey: ["messages"] });
     });
 
+    socket.on("conversation.typing", (payload: { conversationId: string }) => emitTyping(payload.conversationId));
     socket.on("conversation.created", invalidateConversations);
     socket.on("conversation.updated", invalidateConversation);
     socket.on("conversation.assigned", invalidateConversation);

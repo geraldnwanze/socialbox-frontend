@@ -9,7 +9,7 @@ function firstName(fullName?: string | null): string | null {
 }
 
 /** Live chat visitors and unnamed contacts get a generated label, which reads badly in "Hi X". */
-function isGeneratedName(name?: string | null): boolean {
+export function isGeneratedName(name?: string | null): boolean {
   return !name || /^(website visitor|unknown)\b/i.test(name.trim());
 }
 

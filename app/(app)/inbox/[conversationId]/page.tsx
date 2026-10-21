@@ -7,6 +7,8 @@ import { useMarkConversationRead } from "@/hooks/use-conversations";
 import { useChannels } from "@/hooks/use-channels";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { MessageComposer } from "@/components/inbox/message-composer";
+import { TypingIndicator } from "@/components/inbox/typing-indicator";
+import { isGeneratedName } from "@/lib/canned-response-template";
 import { CustomerPanel } from "@/components/inbox/customer-panel";
 import { PageSpinner } from "@/components/page-spinner";
 
@@ -33,6 +35,9 @@ export default function ConversationPage() {
     <div className="flex flex-1 overflow-hidden">
       <div className="flex flex-1 flex-col overflow-hidden">
         <MessageThread key={conversation.id} conversationId={conversation.id} />
+        <TypingIndicator conversationId={conversation.id} name={
+            isGeneratedName(conversation.contact?.displayName) ? null : conversation.contact?.displayName?.split(" ")[0]
+          } />
         <MessageComposer
           conversationId={conversation.id}
           status={conversation.status}
