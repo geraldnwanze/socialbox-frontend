@@ -10,22 +10,41 @@ import { useState } from "react";
 import { AttachmentChip } from "@/components/inbox/attachment-chip";
 import { FormattedEmail } from "@/components/inbox/formatted-email";
 
+const STATUS_LABEL: Record<string, string> = {
+  QUEUED: "Sending",
+  SENDING: "Sending",
+  SENT: "Sent",
+  DELIVERED: "Delivered",
+  READ: "Read by the customer",
+  FAILED: "Not delivered",
+};
+
 function StatusIcon({ message }: { message: Message }) {
-  switch (message.status) {
-    case "QUEUED":
-    case "SENDING":
-      return <Clock className="h-3 w-3" />;
-    case "SENT":
-      return <Check className="h-3 w-3" />;
-    case "DELIVERED":
-      return <CheckCheck className="h-3 w-3" />;
-    case "READ":
-      return <CheckCheck className="h-3 w-3 text-blue-400" />;
-    case "FAILED":
-      return <TriangleAlert className="h-3 w-3 text-destructive" />;
-    default:
-      return null;
-  }
+  const label = STATUS_LABEL[message.status];
+  const icon = (() => {
+    switch (message.status) {
+      case "QUEUED":
+      case "SENDING":
+        return <Clock className="h-3 w-3" />;
+      case "SENT":
+        return <Check className="h-3 w-3" />;
+      case "DELIVERED":
+        return <CheckCheck className="h-3 w-3" />;
+      case "READ":
+        return <CheckCheck className="h-3 w-3 text-blue-400" />;
+      case "FAILED":
+        return <TriangleAlert className="h-3 w-3 text-destructive" />;
+      default:
+        return null;
+    }
+  })();
+  if (!icon) return null;
+  return (
+    <span title={label} aria-label={label} className="inline-flex items-center gap-1">
+      {icon}
+      <span className="sr-only">{label}</span>
+    </span>
+  );
 }
 
 export function MessageBubble({ message }: { message: Message }) {
@@ -86,6 +105,11 @@ export function MessageBubble({ message }: { message: Message }) {
             </Button>
           )}
         </div>
+        {message.status === "FAILED" && message.failureReason && (
+          <p className={cn("text-[11px] text-destructive", isOutbound ? "text-right" : "text-left")}>
+            {message.failureReason}
+          </p>
+        )}
       </div>
     </div>
   );

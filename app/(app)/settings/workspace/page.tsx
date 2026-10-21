@@ -3,6 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { useWorkspace } from "@/providers/workspace-provider";
 import { useCreateTag, useDeleteTag, useTags } from "@/hooks/use-tags";
+import { useUpdateWorkspaceSettings } from "@/hooks/use-workspaces";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +20,7 @@ export default function WorkspaceSettingsPage() {
   const { data: tags, isLoading } = useTags();
   const createTag = useCreateTag();
   const deleteTag = useDeleteTag();
+  const updateSettings = useUpdateWorkspaceSettings();
   const [name, setName] = useState("");
   const [color, setColor] = useState(TAG_COLORS[0]);
   const isAdmin = activeWorkspace?.role === "OWNER" || activeWorkspace?.role === "ADMIN";
@@ -39,6 +43,33 @@ export default function WorkspaceSettingsPage() {
         <CardHeader>
           <CardTitle className="text-base">Name</CardTitle>
           <CardDescription>{activeWorkspace?.name}</CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1">
+            <CardTitle className="text-base">Read receipts</CardTitle>
+            <CardDescription>
+              Let customers see when you&apos;ve read their message: &quot;seen&quot; on WhatsApp and Messenger, and
+              &quot;Seen&quot; in the website chat. Email stays private (it only marks the mail read in your own
+              mailbox), and Telegram doesn&apos;t support read receipts.
+            </CardDescription>
+          </div>
+          <Switch
+            aria-label="Send read receipts"
+            checked={activeWorkspace?.sendReadReceipts ?? true}
+            disabled={!isAdmin || updateSettings.isPending}
+            onCheckedChange={(checked) =>
+              updateSettings.mutate(
+                { sendReadReceipts: checked },
+                {
+                  onSuccess: () => toast.success(checked ? "Read receipts on" : "Read receipts off"),
+                  onError: () => toast.error("Unable to update this setting"),
+                },
+              )
+            }
+          />
         </CardHeader>
       </Card>
 

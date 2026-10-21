@@ -12,3 +12,11 @@ export function useCreateWorkspace() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
   });
 }
+
+export function useUpdateWorkspaceSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: { sendReadReceipts?: boolean }) => api.patch<Workspace>("/workspace/settings", settings),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
+  });
+}

@@ -46,6 +46,8 @@ export interface Workspace {
   name: string;
   slug: string;
   logoUrl?: string | null;
+  /** Tell customers when an agent has read their message. */
+  sendReadReceipts: boolean;
   role: WorkspaceRole;
 }
 
