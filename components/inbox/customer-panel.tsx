@@ -22,6 +22,7 @@ import {
 import { ChannelLabel } from "@/components/channel-badge";
 import { ActivityTimeline } from "@/components/inbox/activity-timeline";
 import { AiSummaryCard } from "@/components/inbox/ai-summary-card";
+import { cn } from "@/lib/utils";
 import { PRIORITIES, PRIORITY_LABEL } from "@/lib/priority";
 import { identityLabel } from "@/lib/channel-meta";
 import { useTeamMembers } from "@/hooks/use-team";
@@ -43,7 +44,7 @@ function initialsOf(name?: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
-export function CustomerPanel({ conversation }: { conversation: Conversation }) {
+export function CustomerPanel({ conversation, className }: { conversation: Conversation; className?: string }) {
   const { data: members } = useTeamMembers();
   const { data: allTags } = useTags();
   const { data: conversationTags } = useConversationTags(conversation.id);
@@ -69,7 +70,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
   }
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4">
+    <aside className={cn("flex w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4", className)}>
       <div className="flex flex-col items-center gap-2 text-center">
         <Avatar className="h-14 w-14">
           <AvatarFallback className="text-lg">{initialsOf(contact?.displayName)}</AvatarFallback>

@@ -2,7 +2,7 @@ import { MessagesSquare } from "lucide-react";
 
 export default function InboxIndexPage() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+    <div className="hidden flex-1 flex-col items-center md:flex justify-center gap-2 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
         <MessagesSquare className="h-6 w-6 text-muted-foreground" />
       </div>

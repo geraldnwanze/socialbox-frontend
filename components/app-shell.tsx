@@ -48,17 +48,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-4">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+    <div className="flex h-dvh flex-col">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background px-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <MessagesSquare className="h-4 w-4" />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <button className="text-sm font-semibold hover:text-muted-foreground">
+                  <button className="max-w-[40vw] truncate text-sm font-semibold hover:text-muted-foreground sm:max-w-xs">
                     {activeWorkspace?.name ?? "SocialBox"}
                   </button>
                 }
@@ -85,7 +85,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
           </div>
 
-          <nav className="flex items-center gap-1">
+
+          <nav
+            aria-label="Main"
+            className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:inset-auto md:items-center md:gap-1 md:border-t-0 md:bg-transparent md:pb-0"
+          >
             {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
               const isActive = pathname.startsWith(item.matchPrefix ?? item.href);
               return (
@@ -93,11 +97,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                    isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+                    "flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors md:flex-none md:flex-row md:gap-1.5 md:rounded-md md:px-3 md:py-1.5 md:text-sm",
+                    isActive
+                      ? "text-primary md:bg-accent md:text-accent-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5 md:h-4 md:w-4" />
                   {item.label}
                 </Link>
               );
@@ -105,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -176,7 +182,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">{children}</div>
+      <div className="flex flex-1 overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
     </div>
   );
 }

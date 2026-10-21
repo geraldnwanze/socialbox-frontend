@@ -29,7 +29,7 @@ function useCounts() {
   return { all: fmt(all), unread: fmt(unread), mine: fmt(mine) };
 }
 
-export function FiltersSidebar() {
+export function FiltersSidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
   const { data } = useChannels();
   const { data: views } = useInboxViews();
   const { sidebar, selectInbox, activeViewId, applyView, snapshot, search, extras } = useInboxFilters();
@@ -40,30 +40,34 @@ export function FiltersSidebar() {
   const connectedChannels = data?.connected.filter((c) => c.status === "CONNECTED") ?? [];
   const plain = !activeViewId && !search && !Object.keys(extras).length;
   const none = Object.keys(sidebar).length === 0;
+  const go = (fn: () => void) => {
+    fn();
+    onNavigate?.();
+  };
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r bg-muted/20 p-3">
+    <aside className={cn("flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r bg-muted/20 p-3", className)}>
       <nav className="space-y-0.5">
         <FilterRow
           icon={<Inbox className="h-4 w-4" />}
           label="All"
           count={counts.all}
           active={plain && none}
-          onClick={() => selectInbox({})}
+          onClick={() => go(() => selectInbox({}))}
         />
         <FilterRow
           icon={<MailOpen className="h-4 w-4" />}
           label="Unread"
           count={counts.unread}
           active={plain && sidebar.unreadOnly === true && Object.keys(sidebar).length === 1}
-          onClick={() => selectInbox({ unreadOnly: true })}
+          onClick={() => go(() => selectInbox({ unreadOnly: true }))}
         />
         <FilterRow
           icon={<UserCheck className="h-4 w-4" />}
           label="Assigned to me"
           count={counts.mine}
           active={plain && sidebar.assignedTo === "me" && Object.keys(sidebar).length === 1}
-          onClick={() => selectInbox({ assignedTo: "me" })}
+          onClick={() => go(() => selectInbox({ assignedTo: "me" }))}
         />
       </nav>
 
@@ -77,7 +81,7 @@ export function FiltersSidebar() {
                   icon={view.shared ? <Users className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                   label={view.name}
                   active={activeViewId === view.id}
-                  onClick={() => applyView(view)}
+                  onClick={() => go(() => applyView(view))}
                   title={view.shared ? `Shared by ${view.ownerName ?? "a teammate"}` : "Only you can see this view"}
                 />
                 {view.canEdit && (
@@ -131,7 +135,7 @@ export function FiltersSidebar() {
                 icon={<ChannelDot type={channel.type} />}
                 label={channel.externalAccountName || CHANNEL_LABEL[channel.type]}
                 active={plain && sidebar.channelConnectionId === channel.id && Object.keys(sidebar).length === 1}
-                onClick={() => selectInbox({ channelConnectionId: channel.id })}
+                onClick={() => go(() => selectInbox({ channelConnectionId: channel.id }))}
               />
             ))}
           </nav>

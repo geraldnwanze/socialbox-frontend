@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
   if (!activeWorkspace) return <PageSpinner />;
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-3xl p-6 text-sm text-muted-foreground">
+      <div className="mx-auto max-w-3xl p-4 sm:p-6 text-sm text-muted-foreground">
         Analytics are available to workspace admins and owners.
       </div>
     );
@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-4xl space-y-6 p-6">
+      <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold">Analytics</h1>

@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Loader2, Search } from "lucide-react";
+import { CheckSquare, Loader2, Menu, Search } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { FiltersSidebar } from "./filters-sidebar";
 import type { ConversationStatus } from "@/lib/types";
 
 function initialsOf(name?: string) {
@@ -29,10 +31,11 @@ function initialsOf(name?: string) {
     .toUpperCase();
 }
 
-export function ConversationList() {
+export function ConversationList({ className }: { className?: string }) {
   const { filters, status, setStatus, search, setSearch } = useInboxFilters();
   const params = useParams<{ conversationId?: string }>();
   const [selecting, setSelecting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [rawSelected, setRawSelected] = useState<Set<string>>(new Set());
   const [lastClicked, setLastClicked] = useState<number | null>(null);
 
@@ -80,9 +83,21 @@ export function ConversationList() {
   const allSelected = conversations.length > 0 && selected.size === conversations.length;
 
   return (
-    <div className="flex w-80 shrink-0 flex-col border-r">
+    <div className={cn("flex w-full shrink-0 flex-col md:w-80 md:border-r", className)}>
       <div className="space-y-2 border-b p-3">
-        <div className="relative">
+        <div className="relative flex items-center gap-2">
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger
+              render={<Button variant="outline" size="icon" className="shrink-0 lg:hidden" aria-label="Inboxes and views" />}
+            >
+              <Menu className="h-4 w-4" />
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72">
+              <SheetTitle className="sr-only">Inboxes and views</SheetTitle>
+              <FiltersSidebar className="w-full flex-1 border-r-0 bg-transparent pt-12" onNavigate={() => setMenuOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          <div className="relative min-w-0 flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search conversations..."
@@ -90,6 +105,7 @@ export function ConversationList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          </div>
         </div>
         <Tabs value={status} onValueChange={(v) => setStatus(v as ConversationStatus)}>
           <TabsList className="w-full">

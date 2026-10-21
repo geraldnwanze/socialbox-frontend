@@ -17,8 +17,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="border-b px-6">
-        <nav className="flex gap-1">
+      <div className="overflow-x-auto border-b px-2 sm:px-6">
+        <nav className="flex min-w-max gap-1">
           {TABS.map((tab) => (
             <Link
               key={tab.href}

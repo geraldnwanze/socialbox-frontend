@@ -12,6 +12,7 @@ import { PresenceBar } from "@/components/inbox/presence-bar";
 import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { isGeneratedName } from "@/lib/canned-response-template";
 import { CustomerPanel } from "@/components/inbox/customer-panel";
+import { ConversationHeader } from "@/components/inbox/conversation-header";
 import { PageSpinner } from "@/components/page-spinner";
 
 export default function ConversationPage() {
@@ -36,7 +37,8 @@ export default function ConversationPage() {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <ConversationHeader conversation={conversation} />
         <MessageThread key={conversation.id} conversationId={conversation.id} />
         <PresenceBar conversationId={conversationId} />
         <TypingIndicator conversationId={conversation.id} name={
@@ -49,7 +51,7 @@ export default function ConversationPage() {
           customerName={conversation.contact?.displayName}
         />
       </div>
-      <CustomerPanel conversation={conversation} />
+      <CustomerPanel conversation={conversation} className="hidden xl:flex" />
     </div>
   );
 }

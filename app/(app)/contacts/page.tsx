@@ -19,7 +19,7 @@ export default function ContactsPage() {
   const contacts = data?.items ?? [];
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden p-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden p-4 sm:p-6">
       <h1 className="mb-1 text-xl font-semibold">Contacts</h1>
       <p className="mb-4 text-sm text-muted-foreground">
         Everyone who has messaged you, across every connected channel.

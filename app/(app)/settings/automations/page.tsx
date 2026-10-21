@@ -37,7 +37,7 @@ export default function AutomationsSettingsPage() {
   }
 
   if (activeWorkspace && !isAdmin) {
-    return <div className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">Automations are managed by workspace admins.</div>;
+    return <div className="mx-auto max-w-2xl p-4 sm:p-6 text-sm text-muted-foreground">Automations are managed by workspace admins.</div>;
   }
 
   const lookup = {
@@ -46,8 +46,8 @@ export default function AutomationsSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Automations</h1>
           <p className="text-sm text-muted-foreground">

@@ -56,7 +56,7 @@ export function MessageBubble({ message }: { message: Message }) {
 
   return (
     <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
-      <div className="max-w-[70%] space-y-1">
+      <div className="max-w-[85%] sm:max-w-[70%] space-y-1">
         <div
           className={cn(
             "rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words",

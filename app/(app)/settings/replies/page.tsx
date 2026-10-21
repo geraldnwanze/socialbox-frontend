@@ -14,7 +14,7 @@ export default function RepliesSettingsPage() {
   const isAdmin = activeWorkspace?.role === "OWNER" || activeWorkspace?.role === "ADMIN";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 sm:p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">Saved replies</h1>
