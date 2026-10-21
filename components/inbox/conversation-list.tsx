@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useConversations } from "@/hooks/use-conversations";
 import { useInboxFilters } from "./inbox-filters-context";
+import { ViewerBadges } from "@/components/inbox/presence-bar";
 import { ChannelDot } from "@/components/channel-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,7 @@ export function ConversationList() {
                   <p className={cn("truncate text-sm", conversation.unreadCount > 0 ? "font-semibold" : "font-medium")}>
                     {name}
                   </p>
+                  <ViewerBadges conversationId={conversation.id} />
                   {conversation.lastMessageAt && (
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {formatDistanceToNowStrict(new Date(conversation.lastMessageAt), { addSuffix: false })}

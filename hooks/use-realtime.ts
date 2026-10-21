@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createSocket } from "@/lib/socket";
 import { emitTyping } from "@/lib/typing-events";
+import { applyPresence, type Viewer } from "@/lib/presence-store";
 import { playMessageSound, unlockAudioOnFirstInteraction } from "@/lib/notification-sound";
 import { useWorkspace } from "@/providers/workspace-provider";
 import type { Conversation, Message, Notification } from "@/lib/types";
@@ -44,6 +45,9 @@ export function useRealtime() {
     });
 
     socket.on("conversation.typing", (payload: { conversationId: string }) => emitTyping(payload.conversationId));
+    socket.on("conversation.presence", (payload: { conversationId: string; viewers: Viewer[] }) =>
+      applyPresence(payload.conversationId, payload.viewers),
+    );
     socket.on("conversation.created", invalidateConversations);
     socket.on("conversation.updated", invalidateConversation);
     socket.on("conversation.assigned", invalidateConversation);

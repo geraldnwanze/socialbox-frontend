@@ -8,6 +8,8 @@ import { useChannels } from "@/hooks/use-channels";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { MessageComposer } from "@/components/inbox/message-composer";
 import { TypingIndicator } from "@/components/inbox/typing-indicator";
+import { PresenceBar } from "@/components/inbox/presence-bar";
+import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { isGeneratedName } from "@/lib/canned-response-template";
 import { CustomerPanel } from "@/components/inbox/customer-panel";
 import { PageSpinner } from "@/components/page-spinner";
@@ -18,6 +20,7 @@ export default function ConversationPage() {
   const { data: channelsData } = useChannels();
   const markRead = useMarkConversationRead();
   const markedRef = useRef<string | null>(null);
+  usePresenceHeartbeat(conversationId);
 
   useEffect(() => {
     if (conversation && conversation.unreadCount > 0 && markedRef.current !== conversation.id) {
@@ -35,6 +38,7 @@ export default function ConversationPage() {
     <div className="flex flex-1 overflow-hidden">
       <div className="flex flex-1 flex-col overflow-hidden">
         <MessageThread key={conversation.id} conversationId={conversation.id} />
+        <PresenceBar conversationId={conversationId} />
         <TypingIndicator conversationId={conversation.id} name={
             isGeneratedName(conversation.contact?.displayName) ? null : conversation.contact?.displayName?.split(" ")[0]
           } />

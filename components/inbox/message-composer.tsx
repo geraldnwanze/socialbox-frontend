@@ -77,7 +77,7 @@ export function MessageComposer({
     const now = Date.now();
     if (!value.trim() || value.startsWith("/") || now - lastTypingPing.current < 3000) return;
     lastTypingPing.current = now;
-    api.post(`/conversations/${conversationId}/typing`).catch(() => undefined);
+    api.post(`/conversations/${conversationId}/presence`, { typing: true }).catch(() => undefined);
   }
 
   async function handleSend() {
