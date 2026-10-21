@@ -5,7 +5,10 @@ import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useRetryMessage } from "@/hooks/use-messages";
-import { Check, CheckCheck, Clock, FileText, RotateCw, TriangleAlert } from "lucide-react";
+import { Check, CheckCheck, Clock, RotateCw, TriangleAlert } from "lucide-react";
+import { useState } from "react";
+import { AttachmentChip } from "@/components/inbox/attachment-chip";
+import { FormattedEmail } from "@/components/inbox/formatted-email";
 
 function StatusIcon({ message }: { message: Message }) {
   switch (message.status) {
@@ -28,6 +31,8 @@ function StatusIcon({ message }: { message: Message }) {
 export function MessageBubble({ message }: { message: Message }) {
   const isOutbound = message.direction === "OUTBOUND";
   const retry = useRetryMessage();
+  const [formatted, setFormatted] = useState(false);
+  const html = typeof message.metadata?.html === "string" ? message.metadata.html : null;
 
   return (
     <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
@@ -43,26 +48,23 @@ export function MessageBubble({ message }: { message: Message }) {
           {message.attachments && message.attachments.length > 0 && (
             <div className="mb-1.5 space-y-1">
               {message.attachments.map((attachment) => (
-                <a
-                  key={attachment.id}
-                  href={attachment.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs underline underline-offset-2",
-                    isOutbound ? "bg-primary-foreground/10" : "bg-background/60",
-                  )}
-                >
-                  <FileText className="h-3.5 w-3.5 shrink-0" />
-                  {attachment.fileName ?? "Attachment"}
-                </a>
+                <AttachmentChip key={attachment.id} attachment={attachment} outbound={isOutbound} />
               ))}
             </div>
           )}
           {typeof message.metadata?.subject === "string" && message.metadata.subject && (
             <p className="mb-1 font-semibold">{message.metadata.subject}</p>
           )}
-          {message.content}
+          {formatted && html ? <FormattedEmail html={html} /> : message.content}
+          {html && (
+            <button
+              type="button"
+              onClick={() => setFormatted((f) => !f)}
+              className="mt-1.5 block text-[11px] underline underline-offset-2 opacity-70 hover:opacity-100"
+            >
+              {formatted ? "Show plain text" : "Show formatted"}
+            </button>
+          )}
         </div>
         <div
           className={cn(

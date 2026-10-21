@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import type { CannedResponse, ChannelCapabilities, ConversationStatus, MessageType } from "@/lib/types";
 import { Loader2, MessageSquareText, Paperclip, Send, X } from "lucide-react";
 
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 function messageTypeForMime(mimeType: string): MessageType {
   if (mimeType.startsWith("image/")) return "IMAGE";
   if (mimeType.startsWith("video/")) return "VIDEO";
@@ -191,7 +193,15 @@ export function MessageComposer({
               ref={fileInputRef}
               type="file"
               className="hidden"
-              onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                if (file && file.size > MAX_UPLOAD_BYTES) {
+                  toast.error("Files can be at most 10 MB");
+                  return;
+                }
+                setPendingFile(file);
+              }}
             />
             <Button
               type="button"
