@@ -35,17 +35,17 @@ export default function ChannelsSettingsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
+    <div className="mx-auto max-w-5xl space-y-4 p-6">
       <div>
         <h1 className="text-xl font-semibold">Channels</h1>
         <p className="text-sm text-muted-foreground">Connect the messaging channels your business uses.</p>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid items-start gap-3 md:grid-cols-2">
         {data?.catalog.map((entry) => {
           const connection = connectedByType.get(entry.type);
           return (
-            <Card key={entry.type}>
+            <Card key={entry.type} className={entry.type === "LIVE_CHAT" ? "md:col-span-2" : undefined}>
               <CardHeader className="flex-row items-center gap-3 space-y-0">
                 <ChannelDot type={entry.type} className="h-8 w-8 text-sm" />
                 <div className="flex-1">
