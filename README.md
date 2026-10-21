@@ -61,13 +61,39 @@ account (`owner@demo.socialbox.local` / `password123`) or register a new one.
 
 - No message search across content (only conversation/contact-level search) — matches the
   backend's current search scope.
-- Contacts are browse/search only; there's no "jump to this contact's conversation" link yet,
-  since the backend doesn't expose a contact→conversations lookup.
+- Contacts have a detail page (edit, notes, merge, their conversations), but no tags of their own — tags
+  live on conversations.
 - Workspace rename isn't wired up (no corresponding backend endpoint yet).
 
 ## Testing
 
-No frontend test suite yet — see `socialbox-backend`'s e2e suite for the tests that actually
-cover the cross-cutting scenarios (idempotency, workspace isolation) this UI depends on for
-correctness. A reasonable next step here would be Playwright coverage of the auth → workspace →
-inbox → send-message flow.
+Unit and component tests run with [Vitest](https://vitest.dev) and React Testing Library in a
+simulated browser (jsdom):
+
+```bash
+npm test                # run everything once
+npm run test:watch      # re-run on change
+npm run test:coverage   # coverage summary + HTML report in ./coverage
+```
+
+What is covered (≈250 tests, ≈88% of lines):
+
+- **Logic**: the API client (auth headers, token refresh coalescing, sign-out on a dead session),
+  templates and placeholders, duration formatting, automation rule ↔ form conversion, view summaries,
+  the presence / typing stores, the notification sound.
+- **State and hooks**: inbox filters and saved views, presence heartbeat timing, realtime events →
+  cache refreshes, the auth provider.
+- **Components and pages**: composer (the `/` saved-reply picker, send rules, AI draft preview and undo),
+  conversation list (select mode, shift-click ranges, bulk actions, "Load more"), customer panel,
+  activity timeline, message bubbles (status ticks, sandboxed HTML email), sidebar views, analytics,
+  automations, saved replies, contacts (edit and merge), team, channels, connect dialogs, login/register,
+  workspace privacy switches, and the app shell.
+
+Conventions: tests live next to the code in `__tests__/` folders; network calls are replaced by mocking
+`@/lib/api-client` (so a test states exactly which request it expects); `test-utils/render.tsx` renders with a
+fresh query cache that never retries. The tests deliberately assert behaviour a person would notice
+(what is shown, what request is sent) rather than implementation details. The backend's own e2e suite
+(`npm run test:e2e:docker` there) covers the API and cross-cutting rules such as workspace isolation.
+
+Not covered: real-browser behaviour (layout, drag/scroll, actual audio, WebSockets) — a Playwright suite
+over sign-in → workspace → inbox → send-a-message would be the next step.

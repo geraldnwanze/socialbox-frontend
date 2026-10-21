@@ -107,6 +107,7 @@ export default function TeamSettingsPage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={`Remove ${member.user.fullName}`}
                   onClick={() => {
                     if (confirm(`Remove ${member.user.fullName} from this workspace?`)) {
                       removeMember.mutate(member.id);
