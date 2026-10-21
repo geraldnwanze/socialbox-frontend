@@ -3,14 +3,19 @@
 import { toast } from "sonner";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useWorkspace } from "@/providers/workspace-provider";
-import { useAutomationRules, useDeleteAutomationRule, useUpdateAutomationRule } from "@/hooks/use-automation";
+import {
+  useAutomationRules,
+  useDeleteAutomationRule,
+  useReorderAutomationRules,
+  useUpdateAutomationRule,
+} from "@/hooks/use-automation";
 import { useTags } from "@/hooks/use-tags";
 import { useTeamMembers } from "@/hooks/use-team";
 import { summarize } from "@/lib/automation-form";
 import { AutomationRuleDialog } from "@/components/settings/automation-rule-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
 export default function AutomationsSettingsPage() {
   const { activeWorkspace } = useWorkspace();
@@ -20,6 +25,16 @@ export default function AutomationsSettingsPage() {
   const { data: members } = useTeamMembers();
   const update = useUpdateAutomationRule();
   const remove = useDeleteAutomationRule();
+  const reorder = useReorderAutomationRules();
+
+  function move(index: number, by: -1 | 1) {
+    if (!rules) return;
+    const ids = rules.map((r) => r.id);
+    const target = index + by;
+    if (target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    reorder.mutate(ids);
+  }
 
   if (activeWorkspace && !isAdmin) {
     return <div className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">Automations are managed by workspace admins.</div>;
@@ -37,7 +52,7 @@ export default function AutomationsSettingsPage() {
           <h1 className="text-xl font-semibold">Automations</h1>
           <p className="text-sm text-muted-foreground">
             Handle routine work automatically: route, tag and prioritise conversations, or send an automatic reply. Rules
-            run in order on every new customer message, and everything they do shows in the conversation&apos;s activity.
+            run top to bottom on every new customer message (use the arrows to change the order), and everything they do shows in the conversation&apos;s activity.
           </p>
         </div>
         <AutomationRuleDialog
@@ -67,10 +82,35 @@ export default function AutomationsSettingsPage() {
       )}
 
       <div className="divide-y rounded-lg border empty:hidden">
-        {rules?.map((rule) => {
+        {rules?.map((rule, index) => {
           const { when, then } = summarize(rule, lookup);
           return (
             <div key={rule.id} className="flex items-start gap-3 p-4">
+              <div className="flex shrink-0 flex-col items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  aria-label={`Run ${rule.name} earlier`}
+                  disabled={index === 0 || reorder.isPending}
+                  onClick={() => move(index, -1)}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <span className="text-[11px] tabular-nums text-muted-foreground" title="Rules run in this order">
+                  {index + 1}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  aria-label={`Run ${rule.name} later`}
+                  disabled={index === rules.length - 1 || reorder.isPending}
+                  onClick={() => move(index, 1)}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
               <Switch
                 aria-label={`${rule.enabled ? "Disable" : "Enable"} ${rule.name}`}
                 checked={rule.enabled}

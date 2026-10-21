@@ -43,3 +43,13 @@ export function useDeleteAutomationRule() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["automation-rules"] }),
   });
 }
+
+/** Rules run top to bottom; the server returns the list in its new order. */
+export function useReorderAutomationRules() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.post<AutomationRule[]>("/automation-rules/reorder", { ids }),
+    onSuccess: (rules) => queryClient.setQueryData(["automation-rules"], rules),
+    onError: () => queryClient.invalidateQueries({ queryKey: ["automation-rules"] }),
+  });
+}
