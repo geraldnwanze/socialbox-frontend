@@ -9,6 +9,7 @@ import { useWorkspace } from "@/providers/workspace-provider";
 import { useContact, useContactConversations, useUpdateContact } from "@/hooks/use-contacts";
 import { ApiError } from "@/lib/api-client";
 import { ChannelLabel } from "@/components/channel-badge";
+import { identityLabel } from "@/lib/channel-meta";
 import { MergeContactDialog } from "@/components/contacts/merge-contact-dialog";
 import { PageSpinner } from "@/components/page-spinner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -156,7 +157,7 @@ export default function ContactDetailPage() {
                 <div key={identity.id} className="flex items-center justify-between gap-3 p-3 text-sm">
                   <ChannelLabel type={identity.channel} />
                   <span className="truncate text-muted-foreground">
-                    {identity.username ? `@${identity.username}` : identity.externalUserId}
+                    {identityLabel(identity)}
                     {country ? ` · ${country}` : ""}
                   </span>
                 </div>

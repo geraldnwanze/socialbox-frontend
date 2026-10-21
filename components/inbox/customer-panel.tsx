@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChannelLabel } from "@/components/channel-badge";
+import { identityLabel } from "@/lib/channel-meta";
 import { useTeamMembers } from "@/hooks/use-team";
 import { useTags } from "@/hooks/use-tags";
 import { useConversationTags } from "@/hooks/use-conversation-tags";
@@ -206,7 +207,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
               <div key={identity.id} className="flex items-center justify-between text-sm">
                 <ChannelLabel type={identity.channel} />
                 <span className="truncate text-muted-foreground">
-                  {identity.username ? `@${identity.username}` : identity.externalUserId}
+                  {identityLabel(identity)}
                 </span>
               </div>
             ),

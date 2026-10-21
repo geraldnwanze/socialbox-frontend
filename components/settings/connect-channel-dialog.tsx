@@ -26,6 +26,10 @@ interface FieldConfig {
   placeholder?: string;
   helpText?: string;
   optional?: boolean;
+  secret?: boolean;
+  defaultValue?: string;
+  /** Renders a dropdown instead of a text box. */
+  options?: { value: string; label: string }[];
 }
 
 const FIELDS_BY_TYPE: Partial<Record<ChannelType, FieldConfig[]>> = {
@@ -49,6 +53,51 @@ const FIELDS_BY_TYPE: Partial<Record<ChannelType, FieldConfig[]>> = {
     { name: "pageAccessToken", label: "Page access token" },
     { name: "instagramAccountId", label: "Instagram account ID" },
   ],
+  EMAIL: [
+    {
+      name: "email",
+      label: "Email address",
+      placeholder: "support@yourcompany.com",
+      helpText: "The mailbox customers write to. Replies are sent from this address.",
+    },
+    { name: "fromName", label: "Sender name", placeholder: "Acme Support", optional: true },
+    {
+      name: "username",
+      label: "Username",
+      helpText: "Leave empty to use the email address.",
+      optional: true,
+    },
+    {
+      name: "password",
+      label: "Password",
+      secret: true,
+      helpText: "Gmail and Outlook require an app password, not your normal one. Stored encrypted.",
+    },
+    { name: "imapHost", label: "IMAP server (incoming)", placeholder: "imap.gmail.com" },
+    { name: "imapPort", label: "IMAP port", defaultValue: "993" },
+    {
+      name: "imapSecurity",
+      label: "IMAP security",
+      defaultValue: "SSL",
+      options: [
+        { value: "SSL", label: "SSL/TLS (port 993)" },
+        { value: "STARTTLS", label: "STARTTLS (port 143)" },
+        { value: "NONE", label: "None (local testing only)" },
+      ],
+    },
+    { name: "smtpHost", label: "SMTP server (outgoing)", placeholder: "smtp.gmail.com" },
+    { name: "smtpPort", label: "SMTP port", defaultValue: "587" },
+    {
+      name: "smtpSecurity",
+      label: "SMTP security",
+      defaultValue: "STARTTLS",
+      options: [
+        { value: "STARTTLS", label: "STARTTLS (port 587)" },
+        { value: "SSL", label: "SSL/TLS (port 465)" },
+        { value: "NONE", label: "None (local testing only)" },
+      ],
+    },
+  ],
   LIVE_CHAT: [
     { name: "title", label: "Widget title", placeholder: "Chat with us", optional: true },
     { name: "greeting", label: "Greeting", placeholder: "Hi! How can we help?", optional: true },
@@ -64,9 +113,25 @@ const FIELDS_BY_TYPE: Partial<Record<ChannelType, FieldConfig[]>> = {
   ],
 };
 
-function initialValues(connection?: ChannelConnection): Record<string, string> {
+function defaultsFor(type: ChannelType): Record<string, string> {
+  return Object.fromEntries(
+    (FIELDS_BY_TYPE[type] ?? []).filter((f) => f.defaultValue).map((f) => [f.name, f.defaultValue as string]),
+  );
+}
+
+function initialValues(type: ChannelType, connection?: ChannelConnection): Record<string, string> {
   const meta = connection?.metadata;
-  if (!meta) return {};
+  const defaults = defaultsFor(type);
+  if (!meta) return defaults;
+  if (type === "EMAIL") {
+    // Secrets and ports aren't returned by the API, so only the visible parts come back.
+    return {
+      ...defaults,
+      email: String(meta.email ?? ""),
+      imapHost: String(meta.imapHost ?? ""),
+      smtpHost: String(meta.smtpHost ?? ""),
+    };
+  }
   const origins = Array.isArray(meta.allowedOrigins) ? (meta.allowedOrigins as string[]).join(", ") : "";
   return {
     title: String(meta.title ?? ""),
@@ -90,7 +155,7 @@ export function ConnectChannelDialog({
   prefillFrom?: ChannelConnection;
 }) {
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<Record<string, string>>(() => initialValues(connection ?? prefillFrom));
+  const [values, setValues] = useState<Record<string, string>>(() => initialValues(type, connection ?? prefillFrom));
   const [error, setError] = useState<string | null>(null);
   const connect = useConnectChannel();
   const reconnect = useReconnectChannel();
@@ -107,7 +172,7 @@ export function ConnectChannelDialog({
       } else {
         await connect.mutateAsync({ type, credentials: values });
         toast.success(`${CHANNEL_LABEL[type]} connected`);
-        setValues({});
+        setValues(defaultsFor(type));
       }
       setOpen(false);
     } catch (err) {
@@ -118,27 +183,46 @@ export function ConnectChannelDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger as React.ReactElement} />
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{connection ? `${CHANNEL_LABEL[type]} settings` : `Connect ${CHANNEL_LABEL[type]}`}</DialogTitle>
             <DialogDescription>
               {type === "LIVE_CHAT"
                 ? "Set up the chat widget for your website. You'll get a snippet to paste into your site."
-                : `Enter the credentials for the ${CHANNEL_LABEL[type]} account you want to connect.`}
+                : type === "EMAIL"
+                  ? "Connect any mailbox over IMAP/SMTP. New mail from now on appears in your inbox within a minute; existing mail isn't imported."
+                  : `Enter the credentials for the ${CHANNEL_LABEL[type]} account you want to connect.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2">
                 <Label htmlFor={field.name}>{field.label}</Label>
-                <Input
-                  id={field.name}
-                  required={!field.optional}
-                  placeholder={field.placeholder}
-                  value={values[field.name] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [field.name]: e.target.value }))}
-                />
+                {field.options ? (
+                  <select
+                    id={field.name}
+                    value={values[field.name] ?? field.defaultValue ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [field.name]: e.target.value }))}
+                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    {field.options.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    id={field.name}
+                    type={field.secret ? "password" : "text"}
+                    autoComplete={field.secret ? "new-password" : "off"}
+                    required={!field.optional}
+                    placeholder={field.placeholder}
+                    value={values[field.name] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [field.name]: e.target.value }))}
+                  />
+                )}
                 {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
               </div>
             ))}

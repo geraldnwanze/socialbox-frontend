@@ -8,6 +8,7 @@ export const CHANNEL_LABEL: Record<ChannelType, string> = {
   X: "X",
   TIKTOK: "TikTok",
   LIVE_CHAT: "Live chat",
+  EMAIL: "Email",
 };
 
 export const CHANNEL_COLOR: Record<ChannelType, string> = {
@@ -18,8 +19,15 @@ export const CHANNEL_COLOR: Record<ChannelType, string> = {
   X: "#000000",
   TIKTOK: "#000000",
   LIVE_CHAT: "#4F46E5",
+  EMAIL: "#EA580C",
 };
 
 export function channelInitial(type: ChannelType): string {
   return CHANNEL_LABEL[type]?.[0] ?? "?";
+}
+
+/** How a contact is shown on a channel: "@handle" where that is the convention, the address for email. */
+export function identityLabel(identity: { channel: ChannelType; username?: string; externalUserId: string }): string {
+  if (identity.channel === "EMAIL") return identity.externalUserId;
+  return identity.username ? `@${identity.username}` : identity.externalUserId;
 }

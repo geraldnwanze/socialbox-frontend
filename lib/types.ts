@@ -7,7 +7,8 @@ export type ChannelType =
   | "INSTAGRAM"
   | "X"
   | "TIKTOK"
-  | "LIVE_CHAT";
+  | "LIVE_CHAT"
+  | "EMAIL";
 
 export type ChannelConnectionStatus = "CONNECTED" | "DISCONNECTED" | "ERROR" | "PENDING";
 
@@ -170,6 +171,8 @@ export interface Message {
   failureReason?: string;
   sentAt: string;
   createdAt: string;
+  /** Channel facts about this message, e.g. an email's subject. */
+  metadata?: Record<string, unknown>;
   attachments?: MessageAttachment[];
 }
 

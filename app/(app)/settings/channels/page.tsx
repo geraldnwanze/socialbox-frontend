@@ -63,11 +63,14 @@ export default function ChannelsSettingsPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-3">
+                {connection?.status === "ERROR" && connection.lastErrorMessage && (
+                  <p className="text-sm text-destructive">{connection.lastErrorMessage}</p>
+                )}
                 {entry.type === "LIVE_CHAT" && connection && connection.externalAccountId && (
                   <EmbedSnippet widgetKey={connection.externalAccountId} />
                 )}
                 <div className="flex justify-end gap-2">
-                {entry.type === "LIVE_CHAT" && connection && (
+                {(entry.type === "LIVE_CHAT" || entry.type === "EMAIL") && connection && (
                   <ConnectChannelDialog
                     type={entry.type}
                     connection={connection}

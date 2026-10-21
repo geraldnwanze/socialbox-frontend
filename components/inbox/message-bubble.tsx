@@ -59,6 +59,9 @@ export function MessageBubble({ message }: { message: Message }) {
               ))}
             </div>
           )}
+          {typeof message.metadata?.subject === "string" && message.metadata.subject && (
+            <p className="mb-1 font-semibold">{message.metadata.subject}</p>
+          )}
           {message.content}
         </div>
         <div
