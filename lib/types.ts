@@ -107,6 +107,8 @@ export interface Contact {
   avatarUrl?: string;
   email?: string;
   phone?: string;
+  /** Internal notes, never sent to the customer. */
+  notes?: string;
   identities: ContactIdentity[];
   createdAt: string;
 }

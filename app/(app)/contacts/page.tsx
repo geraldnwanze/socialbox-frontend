@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useContacts } from "@/hooks/use-contacts";
 import { ChannelLabel } from "@/components/channel-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -52,7 +53,11 @@ export default function ContactsPage() {
         )}
 
         {contacts.map((contact, i) => (
-          <div key={contact.id} className={`flex items-center gap-3 p-4 ${i > 0 ? "border-t" : ""}`}>
+          <Link
+            key={contact.id}
+            href={`/contacts/${contact.id}`}
+            className={`flex items-center gap-3 p-4 hover:bg-accent ${i > 0 ? "border-t" : ""}`}
+          >
             <Avatar className="h-10 w-10">
               <AvatarFallback>{initialsOf(contact.displayName)}</AvatarFallback>
             </Avatar>
@@ -64,7 +69,7 @@ export default function ContactsPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
