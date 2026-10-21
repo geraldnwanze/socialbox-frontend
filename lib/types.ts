@@ -198,3 +198,39 @@ export interface CannedResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DurationStats {
+  count: number;
+  avgSeconds: number | null;
+  medianSeconds: number | null;
+  p90Seconds: number | null;
+}
+
+export interface AnalyticsOverview {
+  range: { days: number; from: string; to: string };
+  totals: {
+    newConversations: number;
+    answered: number;
+    unanswered: number;
+    resolved: number;
+    inboundMessages: number;
+    outboundMessages: number;
+  };
+  firstResponse: DurationStats;
+  resolution: DurationStats;
+  daily: { date: string; conversations: number }[];
+  byChannel: {
+    channelConnectionId: string;
+    type: ChannelType;
+    name: string | null;
+    conversations: number;
+    answered: number;
+    medianFirstResponseSeconds: number | null;
+  }[];
+  byAgent: {
+    memberId: string;
+    name: string | null;
+    firstReplies: number;
+    medianFirstResponseSeconds: number | null;
+  }[];
+}

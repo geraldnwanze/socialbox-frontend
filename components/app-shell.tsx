@@ -18,19 +18,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Inbox, MessagesSquare, Settings, Users, Volume2, VolumeX } from "lucide-react";
+import { BarChart3, Bell, Inbox, MessagesSquare, Settings, Users, Volume2, VolumeX } from "lucide-react";
 import { isSoundEnabled, playMessageSound, setSoundEnabled } from "@/lib/notification-sound";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; label: string; icon: typeof Inbox; matchPrefix?: string; adminOnly?: boolean }[] = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
   { href: "/settings/channels", label: "Settings", icon: Settings, matchPrefix: "/settings" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { activeWorkspace, workspaces, switchWorkspace } = useWorkspace();
+  const isAdmin = activeWorkspace?.role === "OWNER" || activeWorkspace?.role === "ADMIN";
   const { data: notifications } = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
   const pathname = usePathname();
@@ -84,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex items-center gap-1">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
               const isActive = pathname.startsWith(item.matchPrefix ?? item.href);
               return (
                 <Link
