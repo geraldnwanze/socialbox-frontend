@@ -126,14 +126,14 @@ describe("ConnectChannelDialog", () => {
       const connection = {
         id: "c1",
         metadata: {
-          title: "Support", greeting: "Hi", color: "#4F46E5", allowedOrigins: ["https://a.com"], askName: true, askEmail: false,
+          title: "Support", greeting: "Hi", color: "#4F46E5", allowedOrigins: ["https://a.com"], askName: true,
           hours: { enabled: true, timezone: "Europe/London", days: [1, 2], start: "08:30", end: "18:00" },
         },
       } as unknown as ChannelConnection;
       await open(<ConnectChannelDialog type="LIVE_CHAT" connection={connection} trigger={trigger} />);
       expect(await screen.findByLabelText("Widget title")).toHaveValue("Support");
       expect(screen.getByLabelText(/ask for the visitor's name/i)).toBeChecked();
-      expect(screen.getByLabelText(/ask for the visitor's email/i)).not.toBeChecked();
+      expect(screen.queryByLabelText(/ask for the visitor's email/i)).not.toBeInTheDocument();
       expect(screen.getByLabelText("Time zone")).toHaveValue("Europe/London");
       expect(screen.getByLabelText("Opens at")).toHaveValue("08:30");
       expect(screen.getByRole("button", { name: "Tue" })).toHaveAttribute("aria-pressed", "true");

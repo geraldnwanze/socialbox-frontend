@@ -113,12 +113,7 @@ const FIELDS_BY_TYPE: Partial<Record<ChannelType, FieldConfig[]>> = {
       label: "Ask for the visitor's name before they chat",
       kind: "checkbox",
       optional: true,
-    },
-    {
-      name: "askEmail",
-      label: "Ask for the visitor's email before they chat",
-      kind: "checkbox",
-      optional: true,
+      helpText: "The visitor's email is always required, so every chat can be followed up.",
     },
     {
       name: "hoursEnabled",
@@ -202,7 +197,6 @@ function initialValues(type: ChannelType, connection?: ChannelConnection): Recor
     color: String(meta.color ?? ""),
     allowedOrigins: origins,
     askName: String(meta.askName === true),
-    askEmail: String(meta.askEmail === true),
     offlineMessage: String(meta.offlineMessage ?? ""),
     hoursEnabled: String(hours.enabled === true),
     ...(hours.timezone && { timezone: hours.timezone }),
